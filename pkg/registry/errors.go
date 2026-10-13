@@ -1,7 +1,5 @@
 package registry
 
-import "fmt"
-
 var (
 	ErrStreamNotExist = "StreamNotExist"
 )
@@ -9,5 +7,5 @@ var (
 type StreamNotFoundError struct{}
 
 func (e StreamNotFoundError) Error() string {
-	return fmt.Sprintf("%s", ErrStreamNotExist)
+	return ErrStreamNotExist
 }

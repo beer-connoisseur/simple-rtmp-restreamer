@@ -32,7 +32,7 @@ func (sess *MediaSession) init() {
 		return err
 	})
 
-	sess.handle.OnPlay(func(app, streamName string, start, duration float64, reset bool) rtmp.StatusCode {
+	sess.handle.OnPlay(func(_, streamName string, _, _ float64, _ bool) rtmp.StatusCode {
 		stream, err := sess.registry.GetInternalStream(streamName)
 		if err != nil {
 			log.Printf("Failed to get InternalStreamer for pull consumer %s: %v", streamName, err)
@@ -46,7 +46,7 @@ func (sess *MediaSession) init() {
 		return rtmp.NETSTREAM_PLAY_START
 	})
 
-	sess.handle.OnPublish(func(app, streamName string) rtmp.StatusCode {
+	sess.handle.OnPublish(func(_, streamName string) rtmp.StatusCode {
 		stream, err := sess.registry.GetInternalStream(streamName)
 		if err != nil {
 			log.Printf("Failed to get %s stream info: %v", streamName, err)
@@ -63,7 +63,8 @@ func (sess *MediaSession) init() {
 	})
 
 	sess.handle.OnStateChange(func(newState rtmp.RtmpState) {
-		if newState == rtmp.STATE_RTMP_PLAY_START {
+		switch newState {
+		case rtmp.STATE_RTMP_PLAY_START:
 			fmt.Println("play start")
 
 			if sess.pullConsumer == nil {
@@ -71,17 +72,17 @@ func (sess *MediaSession) init() {
 			}
 			go sess.pullConsumer.sendToClient()
 			sess.resource = sess.pullConsumer
-		} else if newState == rtmp.STATE_RTMP_PUBLISH_START {
+		case rtmp.STATE_RTMP_PUBLISH_START:
 			name := sess.handle.GetStreamName()
 			log.Printf("New rtmp stream %s", name)
 
 			sess.resource = sess.producer
 			sess.producer.start()
-		} else if newState == rtmp.STATE_RTMP_PUBLISH_FAILED {
+		case rtmp.STATE_RTMP_PUBLISH_FAILED:
 			name := sess.handle.GetStreamName()
 			log.Printf("Failed rtmp stream %s", name)
 			sess.stop()
-		} else {
+		default:
 			// log.Printf("New state of %s: %d", sess.handle.GetStreamName(), newState)
 		}
 	})

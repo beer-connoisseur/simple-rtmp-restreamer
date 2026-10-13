@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	REGESTRY_STORAGE_FILE = "simple-rtmp-restreamer.data.json"
+	REGISTRY_STORAGE_FILE = "simple-rtmp-restreamer.data.json"
 )
 
 type registryImpl struct {
@@ -118,7 +118,7 @@ func (r *registryImpl) getStreamsList() []*Stream {
 }
 
 func (r *registryImpl) loadPersistent() {
-	file, err := os.Open(REGESTRY_STORAGE_FILE)
+	file, err := os.Open(REGISTRY_STORAGE_FILE)
 	if err != nil {
 		log.Printf("Failed to load restreamser registry from file: %v", err)
 		return
@@ -143,7 +143,7 @@ func (r *registryImpl) loadPersistent() {
 }
 
 func (r *registryImpl) savePersistent() {
-	file, err := os.Create(REGESTRY_STORAGE_FILE)
+	file, err := os.Create(REGISTRY_STORAGE_FILE)
 	if err != nil {
 		log.Printf("Failed to save restreamser registry file: %v", err)
 		return

@@ -166,9 +166,9 @@ type ErrorResponse struct {
 	Error string `json:"error"`
 }
 
-func JSONError(w http.ResponseWriter, error string, code int) {
+func JSONError(w http.ResponseWriter, message string, code int) {
 	w.WriteHeader(code)
-	if err := json.NewEncoder(w).Encode(ErrorResponse{error}); err != nil {
+	if err := json.NewEncoder(w).Encode(ErrorResponse{message}); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

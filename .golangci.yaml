@@ -24,7 +24,7 @@ linters:
     - ineffassign
     - makezero
     - mirror
-    - mnd
+    # - mnd / a lot of specific constants in code, so I decided to turn off checks for magic numbers
     - nestif
     - nilnil
     - nolintlint
@@ -59,12 +59,6 @@ linters:
     govet:
       enable:
         - shadow
-    mnd:
-      ignored-numbers:
-        - "10"
-        - "100"
-        - "64"
-        - "2"
     nakedret:
       max-func-lines: 25
     nestif:
@@ -72,6 +66,16 @@ linters:
     nolintlint:
       require-explanation: true
       require-specific: true
+    perfsprint:
+      integer-format: false # do not require strconv instead of Sprintf("%d")
+    revive:
+      enable-default-rules: true
+      rules:
+        - name: var-naming
+          arguments:
+            - []
+            - []
+            - - upperCaseConst: true # do not require the names of constants in the camel case.
   exclusions:
     generated: lax
     presets:
@@ -94,7 +98,6 @@ linters:
           - containedctx
           - dupl
           - gosec
-          - mnd
         path: _test\.go
       - path: (.+)\.go$
         text: (comment on exported (method|function|type|const)|should have( a package)? comment|comment should be of the form)

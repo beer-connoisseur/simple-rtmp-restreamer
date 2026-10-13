@@ -48,10 +48,7 @@ func NewPushConsumer(rtmpURL *api.PushTargetURL, sourceName string) (*PushConsum
 	}
 
 	go func() {
-		for {
-			if consumer.connect() {
-				break
-			}
+		for !consumer.connect() {
 			if consumer.quited.Load() {
 				break
 			}
@@ -116,7 +113,7 @@ func (cn *PushConsumer) connection() error {
 		}
 	})
 	cn.client.OnError(func(code, describe string) {
-		log.Printf("RTMPPushClient (%s) client error: %s", cn.url, describe)
+		log.Printf("RTMPPushClient (%s) client error: code=%s, description=%s", cn.url, code, describe)
 	})
 	cn.client.SetOutput(func(data []byte) error {
 		_, err := c.Write(data)
@@ -174,7 +171,7 @@ func (cn *PushConsumer) IsClosed() bool {
 func (cn *PushConsumer) socketRead() (err error) {
 	cn.client.Start(cn.url.String())
 	buf := make([]byte, 65536)
-	n := 0
+	var n int
 	for {
 		n, err = cn.conn.Read(buf)
 		if err != nil && errors.Is(err, net.ErrClosed) {
