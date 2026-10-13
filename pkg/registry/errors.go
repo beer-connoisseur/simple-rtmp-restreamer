@@ -3,7 +3,7 @@ package registry
 import "fmt"
 
 var (
-	ErrStreamNotExist = "ErrStreamNotExist"
+	ErrStreamNotExist = "StreamNotExist"
 )
 
 type StreamNotFoundError struct{}
