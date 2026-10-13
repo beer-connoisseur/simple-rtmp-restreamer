@@ -2,13 +2,14 @@ package apiserver
 
 import (
 	"encoding/json"
-	"github.com/go-chi/chi/v5"
-	"github.com/kbats183/simple-rtmp-restreamer/pkg/api"
-	"github.com/kbats183/simple-rtmp-restreamer/pkg/registry"
 	"log"
 	"net/http"
 	"net/url"
 	"strings"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/kbats183/simple-rtmp-restreamer/pkg/api"
+	"github.com/kbats183/simple-rtmp-restreamer/pkg/registry"
 )
 
 type streamRouter struct {
@@ -25,20 +26,20 @@ func newStreamsRouter(router chi.Router, registry registry.Registry) *streamRout
 
 func (router *streamRouter) Routes() {
 	router.r.Route("/api/streams", func(r chi.Router) {
-		r.Use(ContentTypeJson)
+		r.Use(ContentTypeJSON)
 		r.Get("/", router.getStreams())
-		r.Get("/{id}", router.getStreamById())
+		r.Get("/{id}", router.getStreamByID())
 		r.Get("/-/status", router.getStreamsInfo())
 		r.Post("/", router.createStream())
 		r.Delete("/{id}", router.deleteBankByID())
-		r.Get("/{id}/status", router.getStreamStatusById())
-		r.Post("/{id}/targets", router.addStreamTargetByStreamId())
-		r.Delete("/{id}/targets", router.deleteStreamTargetByStreamId())
+		r.Get("/{id}/status", router.getStreamStatusByID())
+		r.Post("/{id}/targets", router.addStreamTargetByStreamID())
+		r.Delete("/{id}/targets", router.deleteStreamTargetByStreamID())
 	})
 }
 
 func (router *streamRouter) getStreams() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, _ *http.Request) {
 		streams, err := router.registry.GetStreams()
 		if err != nil {
 			handleErrors(w, err)
@@ -49,10 +50,9 @@ func (router *streamRouter) getStreams() http.HandlerFunc {
 			return
 		}
 	}
-
 }
 
-func (router *streamRouter) getStreamById() http.HandlerFunc {
+func (router *streamRouter) getStreamByID() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := chi.URLParam(r, "id")
 		stream, err := router.registry.GetStream(id)
@@ -65,7 +65,6 @@ func (router *streamRouter) getStreamById() http.HandlerFunc {
 			return
 		}
 	}
-
 }
 
 func (router *streamRouter) createStream() http.HandlerFunc {
@@ -81,7 +80,6 @@ func (router *streamRouter) createStream() http.HandlerFunc {
 			return
 		}
 	}
-
 }
 
 func (router *streamRouter) deleteBankByID() http.HandlerFunc {
@@ -92,10 +90,9 @@ func (router *streamRouter) deleteBankByID() http.HandlerFunc {
 			return
 		}
 	}
-
 }
 
-func (router *streamRouter) getStreamStatusById() http.HandlerFunc {
+func (router *streamRouter) getStreamStatusByID() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		status, err := router.registry.GetStatus(chi.URLParam(r, "id"))
 		if err != nil {
@@ -109,7 +106,7 @@ func (router *streamRouter) getStreamStatusById() http.HandlerFunc {
 	}
 }
 
-func (router *streamRouter) addStreamTargetByStreamId() http.HandlerFunc {
+func (router *streamRouter) addStreamTargetByStreamID() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var targetInfo registry.PushTarget
 		if err := json.NewDecoder(r.Body).Decode(&targetInfo); err != nil {
@@ -127,7 +124,7 @@ func (router *streamRouter) addStreamTargetByStreamId() http.HandlerFunc {
 			targetName = targetInfo.URL
 		}
 
-		err = router.registry.AddStreamTarget(chi.URLParam(r, "id"), (*api.PushTargetUrl)(target), targetName)
+		err = router.registry.AddStreamTarget(chi.URLParam(r, "id"), (*api.PushTargetURL)(target), targetName)
 		if err != nil {
 			handleErrors(w, err)
 			return
@@ -135,7 +132,7 @@ func (router *streamRouter) addStreamTargetByStreamId() http.HandlerFunc {
 	}
 }
 
-func (router *streamRouter) deleteStreamTargetByStreamId() http.HandlerFunc {
+func (router *streamRouter) deleteStreamTargetByStreamID() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var targetInfo DeleteTargetInfo
 		if err := json.NewDecoder(r.Body).Decode(&targetInfo); err != nil {
@@ -152,7 +149,7 @@ func (router *streamRouter) deleteStreamTargetByStreamId() http.HandlerFunc {
 }
 
 func (router *streamRouter) getStreamsInfo() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, _ *http.Request) {
 		streams, err := router.registry.GetStreamsStatus()
 		if err != nil {
 			handleErrors(w, err)
@@ -184,17 +181,16 @@ func handleErrors(w http.ResponseWriter, err error) {
 		JSONError(w, "DB_CONNECTION_FAIL", http.StatusServiceUnavailable)
 		return
 	}
-	if err.Error() == http.StatusText(400) {
+	if err.Error() == http.StatusText(http.StatusBadRequest) {
 		log.Printf(logFormat, err)
 		JSONError(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 	switch err.(type) {
-	case registry.StreamNotFound:
+	case registry.StreamNotFoundError:
 		JSONError(w, err.Error(), http.StatusNotFound)
 	default:
 		log.Printf(logFormat, err)
 		JSONError(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 	}
-	return
 }

@@ -3,11 +3,11 @@ package registry
 import "fmt"
 
 var (
-	StreamNotExist = "StreamNotExist"
+	ErrStreamNotExist = "ErrStreamNotExist"
 )
 
-type StreamNotFound struct{}
+type StreamNotFoundError struct{}
 
-func (e StreamNotFound) Error() string {
-	return fmt.Sprintf("%s", StreamNotExist)
+func (e StreamNotFoundError) Error() string {
+	return fmt.Sprintf("%s", ErrStreamNotExist)
 }

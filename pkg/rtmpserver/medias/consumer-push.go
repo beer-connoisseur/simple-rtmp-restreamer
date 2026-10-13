@@ -36,10 +36,10 @@ type PushConsumer struct {
 	sourceName string
 }
 
-func NewPushConsumer(rtmpUrl *api.PushTargetUrl, sourceName string) (*PushConsumer, error) {
+func NewPushConsumer(rtmpURL *api.PushTargetURL, sourceName string) (*PushConsumer, error) {
 	consumer := PushConsumer{
-		id:            utils.GenId(),
-		url:           (*url.URL)(rtmpUrl),
+		id:            utils.GenID(),
+		url:           (*url.URL)(rtmpURL),
 		frameCome:     make(chan struct{}, 1),
 		onReady:       make(chan struct{}),
 		quit:          make(chan struct{}),
@@ -133,9 +133,9 @@ func (cn *PushConsumer) connection() error {
 }
 
 func (cn *PushConsumer) Play(frame *MediaFrameBatch) {
-	//if !cn.isReady.Load() {
-	//	return
-	//}
+	// if !cn.isReady.Load() {
+	// 	return
+	// }
 	cn.framesMtx.Lock()
 	if len(cn.framesBatches) >= 90 {
 		cn.framesBatches = cn.framesBatches[:45]
@@ -148,7 +148,7 @@ func (cn *PushConsumer) Play(frame *MediaFrameBatch) {
 	}
 }
 
-func (cn *PushConsumer) Id() string {
+func (cn *PushConsumer) ID() string {
 	return cn.id
 }
 
@@ -220,7 +220,7 @@ func (cn *PushConsumer) sendToServer() {
 
 			for _, batch := range batches {
 				for _, frame := range batch.Frames {
-					if firstVideo { //wait for I frame
+					if firstVideo { // wait for I frame
 						if frame.IsIFrame {
 							firstVideo = false
 						} else {

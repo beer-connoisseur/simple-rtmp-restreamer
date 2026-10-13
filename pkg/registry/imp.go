@@ -2,12 +2,13 @@ package registry
 
 import (
 	"encoding/json"
-	"github.com/kbats183/simple-rtmp-restreamer/pkg/api"
 	"log"
 	"net/url"
 	"os"
 	"sync"
 	"time"
+
+	"github.com/kbats183/simple-rtmp-restreamer/pkg/api"
 )
 
 const (
@@ -69,10 +70,10 @@ func (r *registryImpl) GetStatus(keyName string) (*StreamStatus, error) {
 		}
 		return key.status.toStreamStatus(), nil
 	}
-	return nil, StreamNotFound{}
+	return nil, StreamNotFoundError{}
 }
 
-func (r *registryImpl) AddStreamTarget(keyName string, target *api.PushTargetUrl, targetName string) error {
+func (r *registryImpl) AddStreamTarget(keyName string, target *api.PushTargetURL, targetName string) error {
 	err := r.addStreamTarget(keyName, target, targetName)
 	r.savePersistent()
 	return err
@@ -95,7 +96,7 @@ func (r *registryImpl) UpdateStatus(keyName string, lastFrameTime time.Time, bit
 		}
 		return nil
 	}
-	return StreamNotFound{}
+	return StreamNotFoundError{}
 }
 
 func (r *registryImpl) GetStreamsStatus() ([]*ExternalStreamInfo, error) {
@@ -171,7 +172,7 @@ func (r *registryImpl) updateFromExternal(key *ExternalStream) error {
 	r.mux.Lock()
 	defer r.mux.Unlock()
 	if stream, ok := r.keys[key.Name]; ok {
-		targets := make([]*api.PushTargetUrl, len(key.Targets))
+		targets := make([]*api.PushTargetURL, len(key.Targets))
 		targetNames := make(map[string]string)
 
 		for i, t := range key.Targets {
@@ -179,7 +180,7 @@ func (r *registryImpl) updateFromExternal(key *ExternalStream) error {
 			if err != nil {
 				return err
 			}
-			targets[i] = (*api.PushTargetUrl)(parse)
+			targets[i] = (*api.PushTargetURL)(parse)
 			targetNames[t.URL] = t.Name
 		}
 
@@ -206,7 +207,7 @@ func (r *registryImpl) deleteStream(keyName string) {
 	delete(r.keys, keyName)
 }
 
-func (r *registryImpl) addStreamTarget(keyName string, target *api.PushTargetUrl, targetName string) error {
+func (r *registryImpl) addStreamTarget(keyName string, target *api.PushTargetURL, targetName string) error {
 	r.mux.Lock()
 	defer r.mux.Unlock()
 
@@ -233,7 +234,7 @@ func (r *registryImpl) addStreamTarget(keyName string, target *api.PushTargetUrl
 
 		return nil
 	}
-	return StreamNotFound{}
+	return StreamNotFoundError{}
 }
 
 func (r *registryImpl) deleteStreamTarget(keyName string, target string) error {
@@ -241,7 +242,7 @@ func (r *registryImpl) deleteStreamTarget(keyName string, target string) error {
 	defer r.mux.Unlock()
 
 	if key, ok := r.keys[keyName]; ok {
-		newTargets := make([]*api.PushTargetUrl, 0, len(key.Targets))
+		newTargets := make([]*api.PushTargetURL, 0, len(key.Targets))
 		for _, t := range key.Targets {
 			if t.String() != target {
 				newTargets = append(newTargets, t)
@@ -256,7 +257,7 @@ func (r *registryImpl) deleteStreamTarget(keyName string, target string) error {
 
 		return nil
 	}
-	return StreamNotFound{}
+	return StreamNotFoundError{}
 }
 
 func NewRegistry() Registry {

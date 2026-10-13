@@ -3,12 +3,13 @@ package rtmpserver
 import (
 	"errors"
 	"fmt"
-	"github.com/kbats183/simple-rtmp-restreamer/pkg/registry"
-	"github.com/yapingcat/gomedia/go-rtmp"
 	"io"
 	"log"
 	"net"
 	"sync"
+
+	"github.com/kbats183/simple-rtmp-restreamer/pkg/registry"
+	"github.com/yapingcat/gomedia/go-rtmp"
 )
 
 type MediaSession struct {
@@ -81,7 +82,7 @@ func (sess *MediaSession) init() {
 			log.Printf("Failed rtmp stream %s", name)
 			sess.stop()
 		} else {
-			//log.Printf("New state of %s: %d", sess.handle.GetStreamName(), newState)
+			// log.Printf("New state of %s: %d", sess.handle.GetStreamName(), newState)
 		}
 	})
 }

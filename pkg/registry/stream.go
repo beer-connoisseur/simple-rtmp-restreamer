@@ -1,19 +1,20 @@
 package registry
 
 import (
-	"github.com/kbats183/simple-rtmp-restreamer/pkg/api"
-	"github.com/kbats183/simple-rtmp-restreamer/pkg/rtmpserver/medias"
 	"log"
 	"net/url"
 	"slices"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/kbats183/simple-rtmp-restreamer/pkg/api"
+	"github.com/kbats183/simple-rtmp-restreamer/pkg/rtmpserver/medias"
 )
 
 type Stream struct {
 	Name        string               `json:"name"`
-	Targets     []*api.PushTargetUrl `json:"targets"`
+	Targets     []*api.PushTargetURL `json:"targets"`
 	TargetNames map[string]string    `json:"target_names"` // URL -> Name mapping
 	status      *streamStatus
 
@@ -29,7 +30,7 @@ type Stream struct {
 }
 
 func newStream(key *ExternalStream) (*Stream, error) {
-	targets := make([]*api.PushTargetUrl, len(key.Targets))
+	targets := make([]*api.PushTargetURL, len(key.Targets))
 	targetNames := make(map[string]string)
 
 	for i, t := range key.Targets {
@@ -37,7 +38,7 @@ func newStream(key *ExternalStream) (*Stream, error) {
 		if err != nil {
 			return nil, err
 		}
-		targets[i] = (*api.PushTargetUrl)(parse)
+		targets[i] = (*api.PushTargetURL)(parse)
 		targetNames[t.URL] = t.Name
 	}
 
@@ -94,7 +95,7 @@ func (s *Stream) dispatch() {
 		}
 		s.OnProducerClose()
 	}()
-	
+
 	for {
 		timer := time.After(time.Second * 30)
 		select {
@@ -126,7 +127,7 @@ func (s *Stream) dispatch() {
 					defer wg.Done()
 					defer func() {
 						if r := recover(); r != nil {
-							log.Printf("Panic in consumer %s: %v", consumer.Id(), r)
+							log.Printf("Panic in consumer %s: %v", consumer.ID(), r)
 						}
 					}()
 					consumer.Play(batch.Clone())
@@ -206,7 +207,7 @@ func (s *Stream) RemoveConsumer(id interface{}) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	for i, consume := range s.consumers {
-		if consume.Id() == id {
+		if consume.ID() == id {
 			s.consumers = append(s.consumers[:i], s.consumers[i+1:]...)
 		}
 	}
