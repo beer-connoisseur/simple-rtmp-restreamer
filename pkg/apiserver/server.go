@@ -1,13 +1,14 @@
 package apiserver
 
 import (
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
-	"github.com/kbats183/simple-rtmp-restreamer/pkg/registry"
 	"log"
 	"net/http"
 	"path/filepath"
 	"strings"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
+	"github.com/kbats183/simple-rtmp-restreamer/pkg/registry"
 )
 
 type webServer struct {
@@ -37,12 +38,12 @@ func NewWebServer(registry registry.Registry) *webServer {
 }
 
 func (a *webServer) Start() {
-	log.Fatal(http.ListenAndServe(":6070", a.router)) //viper.GetString("server.port")
+	log.Fatal(http.ListenAndServe(":6070", a.router)) // viper.GetString("server.port")
 }
 
 func FileServer(r chi.Router, path string, root http.FileSystem) {
 	if path != "/" && path[len(path)-1] != '/' {
-		r.Get(path, http.RedirectHandler(path+"/", 301).ServeHTTP)
+		r.Get(path, http.RedirectHandler(path+"/", http.StatusMovedPermanently).ServeHTTP)
 		path += "/"
 	}
 	path += "*"

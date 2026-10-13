@@ -1,9 +1,10 @@
 package registry
 
 import (
-	"github.com/kbats183/simple-rtmp-restreamer/pkg/api"
 	"net/url"
 	"time"
+
+	"github.com/kbats183/simple-rtmp-restreamer/pkg/api"
 )
 
 type Registry interface {
@@ -12,7 +13,7 @@ type Registry interface {
 	GetInternalStream(keyName string) (*Stream, error)
 	Update(key *ExternalStream) error
 	DeleteStream(keyName string) error
-	AddStreamTarget(keyName string, target *api.PushTargetUrl, targetName string) error
+	AddStreamTarget(keyName string, target *api.PushTargetURL, targetName string) error
 	DeleteStreamTarget(keyName string, target string) error
 	GetStatus(keyName string) (*StreamStatus, error)
 	GetStreamsStatus() ([]*ExternalStreamInfo, error) // should it public?

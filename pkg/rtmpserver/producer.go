@@ -1,14 +1,15 @@
 package rtmpserver
 
 import (
+	"sync"
+	"time"
+
 	"github.com/kbats183/simple-rtmp-restreamer/pkg/registry"
 	"github.com/kbats183/simple-rtmp-restreamer/pkg/rtmpserver/medias"
 	"github.com/yapingcat/gomedia/go-codec"
-	"sync"
-	"time"
 )
 
-//var mainProducer *MediaProducer = nil
+// var mainProducer *MediaProducer = nil
 
 type MediaProducer struct {
 	name               string
@@ -70,7 +71,7 @@ func evaluateBitrate(bytes int, since time.Duration) uint {
 func (prod *MediaProducer) stop() {
 	prod.die.Do(func() {
 		close(prod.quit)
-		//center.unRegister(prod.name) // should i unregister here?
+		// center.unRegister(prod.name) // should i unregister here?
 	})
 }
 
