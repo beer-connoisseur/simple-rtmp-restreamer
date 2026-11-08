@@ -119,12 +119,7 @@ func (router *streamRouter) addStreamTargetByStreamID() http.HandlerFunc {
 			return
 		}
 
-		targetName := targetInfo.Name
-		if targetName == "" {
-			targetName = targetInfo.URL
-		}
-
-		err = router.registry.AddStreamTarget(chi.URLParam(r, "id"), (*api.PushTargetURL)(target), targetName)
+		err = router.registry.AddStreamTarget(chi.URLParam(r, "id"), (*api.PushTargetURL)(target), targetInfo.Name)
 		if err != nil {
 			handleErrors(w, err)
 			return
