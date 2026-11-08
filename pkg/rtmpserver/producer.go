@@ -1,9 +1,11 @@
 package rtmpserver
 
 import (
+	"strings"
 	"sync"
 	"time"
 
+	"github.com/kbats183/simple-rtmp-restreamer/pkg/metrics"
 	"github.com/kbats183/simple-rtmp-restreamer/pkg/registry"
 	"github.com/kbats183/simple-rtmp-restreamer/pkg/rtmpserver/medias"
 	"github.com/yapingcat/gomedia/go-codec"
@@ -34,6 +36,7 @@ func newMediaProducer(name string, sess *MediaSession, stream *registry.Stream) 
 
 func (prod *MediaProducer) start() {
 	sess := prod.session
+	metrics.IngestActive.WithLabelValues(prod.name).Set(1)
 	sess.handle.OnFrame(func(cid codec.CodecID, pts, dts uint32, frame []byte) {
 		if prod.currentFramesBatch == nil {
 			prod.currentFramesBatch = &medias.MediaFrameBatch{StartTime: time.Now()}
@@ -47,6 +50,7 @@ func (prod *MediaProducer) start() {
 			Dts:      dts,
 			IsIFrame: isIFrame,
 		})
+		recordIngestFrame(prod.name, cid, len(frame), isIFrame)
 
 		since := time.Since(prod.currentFramesBatch.StartTime)
 		if since >= time.Second || isIFrame {
@@ -59,6 +63,19 @@ func (prod *MediaProducer) start() {
 			prod.currentFramesBatch = nil
 		}
 	})
+}
+
+func recordIngestFrame(stream string, cid codec.CodecID, size int, isIFrame bool) {
+	kind := "audio"
+	if cid == codec.CODECID_VIDEO_H264 || cid == codec.CODECID_VIDEO_H265 || cid == codec.CODECID_VIDEO_VP8 {
+		kind = "video"
+	}
+	codecName := strings.ToLower(codec.CodecString(cid))
+	metrics.IngestFrames.WithLabelValues(stream, kind, codecName).Inc()
+	metrics.IngestBytes.WithLabelValues(stream, kind, codecName).Add(float64(size))
+	if isIFrame {
+		metrics.IngestKeyframes.WithLabelValues(stream).Inc()
+	}
 }
 
 func evaluateBitrate(bytes int, since time.Duration) uint {
@@ -76,6 +93,7 @@ func (prod *MediaProducer) stop() {
 }
 
 func (prod *MediaProducer) Close() error {
+	metrics.IngestActive.WithLabelValues(prod.name).Set(0)
 	prod.stream.OnProducerClose()
 	prod.stop()
 	_ = prod.session.registry.UpdateStatus(prod.name, time.Unix(0, 0), 0)

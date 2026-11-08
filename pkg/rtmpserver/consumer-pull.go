@@ -5,6 +5,7 @@ import (
 	"sync"
 	"sync/atomic"
 
+	"github.com/kbats183/simple-rtmp-restreamer/pkg/metrics"
 	"github.com/kbats183/simple-rtmp-restreamer/pkg/registry"
 	"github.com/kbats183/simple-rtmp-restreamer/pkg/rtmpserver/medias"
 )
@@ -36,6 +37,7 @@ func (c *PullConsumer) Play(batch *medias.MediaFrameBatch) {
 	c.framesMtx.Lock()
 	if len(c.framesBatches) >= 30 {
 		// Drop oldest batches to prevent memory growth
+		metrics.PullDroppedBatches.WithLabelValues(c.sourceName).Add(float64(len(c.framesBatches) - 15))
 		c.framesBatches = c.framesBatches[len(c.framesBatches)-15:]
 		log.Printf("PullConsumer (%s) dropping old frame batches", c.sourceName)
 	}
@@ -83,6 +85,9 @@ func (c *PullConsumer) sendFrame(frame *medias.MediaFrame) bool {
 
 func (c *PullConsumer) sendToClient() {
 	log.Printf("PullConsumer dispatch (%s) id %s", c.sourceName, c.ID())
+	consumers := metrics.PullConsumers.WithLabelValues(c.sourceName)
+	consumers.Inc()
+	defer consumers.Dec()
 	firstVideo := true
 	for {
 		select {

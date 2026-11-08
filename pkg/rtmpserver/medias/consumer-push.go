@@ -12,7 +12,9 @@ import (
 	"time"
 
 	"github.com/kbats183/simple-rtmp-restreamer/pkg/api"
+	"github.com/kbats183/simple-rtmp-restreamer/pkg/metrics"
 	"github.com/kbats183/simple-rtmp-restreamer/pkg/utils"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/yapingcat/gomedia/go-rtmp"
 )
 
@@ -21,6 +23,7 @@ type PushConsumer struct {
 	client *rtmp.RtmpClient
 	conn   net.Conn
 	url    *url.URL
+	name   string
 
 	isReady atomic.Bool
 	onReady chan struct{}
@@ -34,17 +37,48 @@ type PushConsumer struct {
 	frameCome     chan struct{}
 
 	sourceName string
+
+	metrics pushMetrics
 }
 
-func NewPushConsumer(rtmpURL *api.PushTargetURL, sourceName string) (*PushConsumer, error) {
+type pushMetrics struct {
+	connected       prometheus.Gauge
+	connectFailures prometheus.Counter
+	errors          *prometheus.CounterVec
+	bytes           prometheus.Counter
+	queue           prometheus.Gauge
+	dropped         prometheus.Counter
+}
+
+func newPushMetrics(stream, target string) pushMetrics {
+	labels := metrics.PushLabels(stream, target)
+	return pushMetrics{
+		connected:       metrics.PushConnected.With(labels),
+		connectFailures: metrics.PushConnectFailures.With(labels),
+		errors:          metrics.PushErrors.MustCurryWith(labels),
+		bytes:           metrics.PushBytes.With(labels),
+		queue:           metrics.PushQueueBatches.With(labels),
+		dropped:         metrics.PushDroppedBatches.With(labels),
+	}
+}
+
+// NewPushConsumer creates a consumer that publishes the stream to rtmpURL.
+// targetName is used in metrics and logs; if empty, the target host is used.
+func NewPushConsumer(rtmpURL *api.PushTargetURL, targetName string, sourceName string) (*PushConsumer, error) {
+	u := (*url.URL)(rtmpURL)
+	if targetName == "" {
+		targetName = u.Host
+	}
 	consumer := PushConsumer{
 		id:            utils.GenID(),
-		url:           (*url.URL)(rtmpURL),
+		url:           u,
+		name:          targetName,
 		frameCome:     make(chan struct{}, 1),
 		onReady:       make(chan struct{}),
 		quit:          make(chan struct{}),
 		framesBatches: make([]*MediaFrameBatch, 0, 90), // 24 + 8 * 90 = 744 bytes (64 bit)
 		sourceName:    sourceName,
+		metrics:       newPushMetrics(sourceName, targetName),
 	}
 
 	go func() {
@@ -69,6 +103,7 @@ func (cn *PushConsumer) connect() bool {
 	if cn.quited.Load() {
 		return true
 	}
+	cn.metrics.connectFailures.Inc()
 	log.Printf("RTMPPushClient (%s) from %s failed: %v", cn.url, cn.sourceName, err)
 	time.Sleep(2 * time.Second)
 	return false
@@ -106,6 +141,7 @@ func (cn *PushConsumer) connection() error {
 		if newState == rtmp.STATE_RTMP_PUBLISH_START {
 			log.Printf("RTMPPushClient (%s) ready to publish", cn.url)
 			cn.isReady.Store(true)
+			cn.metrics.connected.Set(1)
 			cn.framesMtx.Lock()
 			cn.framesBatches = nil
 			cn.framesMtx.Unlock()
@@ -113,6 +149,7 @@ func (cn *PushConsumer) connection() error {
 		}
 	})
 	cn.client.OnError(func(code, describe string) {
+		cn.metrics.errors.WithLabelValues(code).Inc()
 		log.Printf("RTMPPushClient (%s) client error: code=%s, description=%s", cn.url, code, describe)
 	})
 	cn.client.SetOutput(func(data []byte) error {
@@ -135,9 +172,15 @@ func (cn *PushConsumer) Play(frame *MediaFrameBatch) {
 	// }
 	cn.framesMtx.Lock()
 	if len(cn.framesBatches) >= 90 {
+		// While the target is not connected the queue is discarded on connect
+		// anyway, so overflow then is not a loss for viewers.
+		if cn.isReady.Load() {
+			cn.metrics.dropped.Add(float64(len(cn.framesBatches) - 45))
+		}
 		cn.framesBatches = cn.framesBatches[:45]
 	}
 	cn.framesBatches = append(cn.framesBatches, frame)
+	cn.metrics.queue.Set(float64(len(cn.framesBatches)))
 	cn.framesMtx.Unlock()
 	select {
 	case cn.frameCome <- struct{}{}:
@@ -153,8 +196,14 @@ func (cn *PushConsumer) Target() string {
 	return cn.url.String()
 }
 
+func (cn *PushConsumer) TargetName() string {
+	return cn.name
+}
+
 func (cn *PushConsumer) Close() error {
 	cn.quited.Store(true)
+	cn.metrics.connected.Set(0)
+	cn.metrics.queue.Set(0)
 	var err error
 	cn.die.Do(func() {
 		close(cn.quit)
@@ -187,6 +236,7 @@ func (cn *PushConsumer) socketRead() (err error) {
 		}
 	}
 	cn.isReady.Store(false)
+	cn.metrics.connected.Set(0)
 	return err
 }
 
@@ -202,6 +252,7 @@ func (cn *PushConsumer) sendFrame(frame *MediaFrame) bool {
 		log.Printf("RTMPPushClient (%s) write socket error: %v", cn.url, err)
 		return false
 	}
+	cn.metrics.bytes.Add(float64(len(frame.Frame)))
 	return true
 }
 
@@ -213,6 +264,7 @@ func (cn *PushConsumer) sendToServer() {
 			cn.framesMtx.Lock()
 			batches := cn.framesBatches
 			cn.framesBatches = nil
+			cn.metrics.queue.Set(0)
 			cn.framesMtx.Unlock()
 
 			for _, batch := range batches {

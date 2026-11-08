@@ -8,6 +8,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/kbats183/simple-rtmp-restreamer/pkg/metrics"
 	"github.com/kbats183/simple-rtmp-restreamer/pkg/registry"
 )
 
@@ -26,6 +27,7 @@ func NewWebServer(registry registry.Registry) *webServer {
 	streamRouter := newStreamsRouter(router, registry)
 	streamRouter.Routes()
 	router.Mount("/debug", middleware.Profiler())
+	router.Handle("/metrics", metrics.Handler())
 
 	workDir, _ := filepath.Abs(".")
 	filesDir := http.Dir(filepath.Join(workDir, "web"))

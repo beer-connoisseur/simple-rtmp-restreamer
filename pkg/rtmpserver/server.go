@@ -5,6 +5,7 @@ import (
 	"net"
 	"strconv"
 
+	"github.com/kbats183/simple-rtmp-restreamer/pkg/metrics"
 	"github.com/kbats183/simple-rtmp-restreamer/pkg/registry"
 	"github.com/kbats183/simple-rtmp-restreamer/pkg/utils"
 	"github.com/yapingcat/gomedia/go-rtmp"
@@ -43,8 +44,10 @@ func (s *MediaServer) Start() {
 		s.sessions[sess.id] = sess
 		s.mu.Unlock()
 		sess.init()
+		metrics.RTMPSessions.Inc()
 		go func() {
 			sess.start()
+			metrics.RTMPSessions.Dec()
 			s.mu.Lock()
 			delete(s.sessions, sess.id)
 			s.mu.Unlock()

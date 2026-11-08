@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/kbats183/simple-rtmp-restreamer/pkg/api"
+	"github.com/kbats183/simple-rtmp-restreamer/pkg/metrics"
 	"github.com/kbats183/simple-rtmp-restreamer/pkg/rtmpserver/medias"
 )
 
@@ -69,6 +70,7 @@ func (s *Stream) OnFrameBatch(frame *medias.MediaFrameBatch) {
 	case s.framesBatches <- frame:
 		log.Printf("Stream %s handle batch: %s", s.Name, frame.StartTime.Format(time.RFC822))
 	default:
+		metrics.StreamDroppedBatches.WithLabelValues(s.Name).Inc()
 		log.Printf("Stream %s dropping frame batch due to full buffer", s.Name)
 	}
 }
@@ -94,6 +96,7 @@ func (s *Stream) dispatch() {
 			log.Printf("Stream dispatch panic for %s: %v", s.Name, r)
 		}
 		s.OnProducerClose()
+		metrics.DeleteStream(s.Name)
 	}()
 
 	for {
@@ -153,9 +156,13 @@ func (s *Stream) updateConsumers() {
 	for _, consumer := range s.targetConsumers {
 		actualTargets[consumer.Target()] = struct{}{}
 		if _, ok := registryTargets[consumer.Target()]; !ok || consumer.IsClosed() {
+			removed := !ok
 			go func(c medias.MediaPushConsumer) {
 				if err := c.Close(); err != nil {
 					log.Printf("Error closing push consumer for %s: %v", consumer.Target(), err)
+				}
+				if removed {
+					metrics.DeletePushTarget(s.Name, c.TargetName())
 				}
 			}(consumer)
 		} else {
@@ -180,7 +187,7 @@ func (s *Stream) updateConsumers() {
 	for _, target := range s.Targets {
 		if _, ok := actualTargets[target.String()]; !ok {
 			log.Printf("Creating PushConsumer for %s with target %s", s.Name, target.String())
-			c, err := medias.NewPushConsumer(target, s.Name)
+			c, err := medias.NewPushConsumer(target, s.TargetNames[target.String()], s.Name)
 			if err != nil {
 				log.Printf("Failed to create push consumer for stream %s: %v", s.Name, err)
 				continue
