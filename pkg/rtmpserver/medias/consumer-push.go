@@ -157,13 +157,22 @@ func (cn *PushConsumer) connection() error {
 		return err
 	})
 
+	// If the session ends before the target accepts the publish, onReady never
+	// fires; without connDone this goroutine would leak on every reconnect.
+	connDone := make(chan struct{})
 	go func() {
-		<-cn.onReady
+		select {
+		case <-cn.onReady:
+		case <-connDone:
+			return
+		}
 		cn.sendToServer()
 		log.Printf("Stopped (%s) ...", cn.url)
 	}()
 
-	return cn.socketRead()
+	readErr := cn.socketRead()
+	close(connDone)
+	return readErr
 }
 
 func (cn *PushConsumer) Play(frame *MediaFrameBatch) {
