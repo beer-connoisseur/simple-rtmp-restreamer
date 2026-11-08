@@ -14,10 +14,10 @@ import (
 // var mainProducer *MediaProducer = nil
 
 type MediaProducer struct {
-	name               string
-	session            *MediaSession
-	mtx                sync.Mutex
-	frames             chan *medias.MediaFrame
+	name    string
+	session *MediaSession
+	// mtx                sync.Mutex
+	// frames             chan *medias.MediaFrame
 	currentFramesBatch *medias.MediaFrameBatch
 	quit               chan struct{}
 	die                sync.Once
@@ -100,9 +100,9 @@ func (prod *MediaProducer) Close() error {
 	return nil
 }
 
-func (prod *MediaProducer) debugName() string {
-	if prod.session == nil {
-		return prod.name
-	}
-	return prod.name + "-" + prod.session.id
-}
+// func (prod *MediaProducer) debugName() string {
+// 	if prod.session == nil {
+// 		return prod.name
+// 	}
+// 	return prod.name + "-" + prod.session.id
+// }

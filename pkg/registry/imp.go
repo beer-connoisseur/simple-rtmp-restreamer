@@ -111,15 +111,15 @@ func (r *registryImpl) GetStreamsStatus() ([]*ExternalStreamInfo, error) {
 	return streams, nil
 }
 
-func (r *registryImpl) getStreamsList() []*Stream {
-	r.mux.Lock()
-	defer r.mux.Unlock()
-	streams := make([]*Stream, 0, len(r.keys))
-	for _, stream := range r.keys {
-		streams = append(streams, stream)
-	}
-	return streams
-}
+// func (r *registryImpl) getStreamsList() []*Stream {
+// 	r.mux.Lock()
+// 	defer r.mux.Unlock()
+// 	streams := make([]*Stream, 0, len(r.keys))
+// 	for _, stream := range r.keys {
+// 		streams = append(streams, stream)
+// 	}
+// 	return streams
+// }
 
 func (r *registryImpl) loadPersistent() {
 	file, err := os.Open(REGISTRY_STORAGE_FILE)
@@ -166,11 +166,11 @@ func (r *registryImpl) savePersistent() {
 	}
 }
 
-func (r *registryImpl) update(key *Stream) {
-	r.mux.Lock()
-	defer r.mux.Unlock()
-	r.keys[key.Name] = key
-}
+// func (r *registryImpl) update(key *Stream) {
+// 	r.mux.Lock()
+// 	defer r.mux.Unlock()
+// 	r.keys[key.Name] = key
+// }
 
 func (r *registryImpl) updateFromExternal(key *ExternalStream) error {
 	r.mux.Lock()

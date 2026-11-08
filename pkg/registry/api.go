@@ -41,10 +41,10 @@ type ExternalStreamInfo struct {
 	Status *StreamStatus `json:"status"`
 }
 
-func (stream *ExternalStream) toRegistryObject() (*Stream, error) {
-	s, err := newStream(stream)
-	return s, err
-}
+// func (stream *ExternalStream) toRegistryObject() (*Stream, error) {
+// 	s, err := newStream(stream)
+// 	return s, err
+// }
 
 func (stream *Stream) toExternalStream() *ExternalStream {
 	targets := make([]PushTarget, len(stream.Targets))

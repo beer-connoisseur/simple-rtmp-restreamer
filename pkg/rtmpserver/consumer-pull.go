@@ -6,13 +6,12 @@ import (
 	"sync/atomic"
 
 	"github.com/kbats183/simple-rtmp-restreamer/pkg/metrics"
-	"github.com/kbats183/simple-rtmp-restreamer/pkg/registry"
 	"github.com/kbats183/simple-rtmp-restreamer/pkg/rtmpserver/medias"
 )
 
 type PullConsumer struct {
-	sess   *MediaSession
-	source *registry.Stream
+	sess *MediaSession
+	// source *registry.Stream
 
 	framesBatches []*medias.MediaFrameBatch
 	framesMtx     sync.Mutex

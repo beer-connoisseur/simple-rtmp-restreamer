@@ -5,7 +5,6 @@ import (
 	"net/url"
 	"slices"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	"github.com/kbats183/simple-rtmp-restreamer/pkg/api"
@@ -24,10 +23,10 @@ type Stream struct {
 
 	framesBatches chan *medias.MediaFrameBatch
 
-	mu     sync.Mutex
-	quit   chan struct{}
-	quited atomic.Bool
-	die    sync.Once
+	mu   sync.Mutex
+	quit chan struct{}
+	// quited atomic.Bool
+	die sync.Once
 }
 
 func newStream(key *ExternalStream) (*Stream, error) {
