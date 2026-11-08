@@ -21,9 +21,11 @@ import (
 type PushConsumer struct {
 	id     string
 	client *rtmp.RtmpClient
-	conn   net.Conn
 	url    *url.URL
 	name   string
+
+	connMtx sync.Mutex
+	conn    net.Conn
 
 	isReady atomic.Bool
 	onReady chan struct{}
@@ -132,8 +134,11 @@ func (cn *PushConsumer) connection() error {
 	if err != nil {
 		return err
 	}
-
-	cn.conn = c
+	if !cn.setConn(c) {
+		// Closed while dialing: do not start a session nobody will stop.
+		_ = c.Close()
+		return net.ErrClosed
+	}
 
 	cn.client = rtmp.NewRtmpClient(rtmp.WithComplexHandshake(), rtmp.WithEnablePublish())
 
@@ -170,7 +175,7 @@ func (cn *PushConsumer) connection() error {
 		log.Printf("Stopped (%s) ...", cn.url)
 	}()
 
-	readErr := cn.socketRead()
+	readErr := cn.socketRead(c)
 	close(connDone)
 	return readErr
 }
@@ -209,6 +214,18 @@ func (cn *PushConsumer) TargetName() string {
 	return cn.name
 }
 
+// setConn stores the connection of a new session. It returns false if the
+// consumer has already been closed.
+func (cn *PushConsumer) setConn(c net.Conn) bool {
+	cn.connMtx.Lock()
+	defer cn.connMtx.Unlock()
+	if cn.quited.Load() {
+		return false
+	}
+	cn.conn = c
+	return true
+}
+
 func (cn *PushConsumer) Close() error {
 	cn.quited.Store(true)
 	cn.metrics.connected.Set(0)
@@ -216,7 +233,11 @@ func (cn *PushConsumer) Close() error {
 	var err error
 	cn.die.Do(func() {
 		close(cn.quit)
-		err = cn.conn.Close()
+		cn.connMtx.Lock()
+		defer cn.connMtx.Unlock()
+		if cn.conn != nil {
+			err = cn.conn.Close()
+		}
 	})
 	log.Printf("Closed RTMPPushConsumer %s", cn.url.String())
 	return err
@@ -226,12 +247,12 @@ func (cn *PushConsumer) IsClosed() bool {
 	return cn.quited.Load()
 }
 
-func (cn *PushConsumer) socketRead() (err error) {
+func (cn *PushConsumer) socketRead(c net.Conn) (err error) {
 	cn.client.Start(cn.url.String())
 	buf := make([]byte, 65536)
 	var n int
 	for {
-		n, err = cn.conn.Read(buf)
+		n, err = c.Read(buf)
 		if err != nil && errors.Is(err, net.ErrClosed) {
 			break
 		} else if err != nil {
