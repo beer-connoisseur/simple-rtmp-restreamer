@@ -21,6 +21,8 @@ type registryImpl struct {
 }
 
 func (r *registryImpl) GetStreams() ([]*ExternalStream, error) {
+	r.mux.Lock()
+	defer r.mux.Unlock()
 	streams := make([]*ExternalStream, 0, len(r.keys))
 	for _, key := range r.keys {
 		streams = append(streams, key.toExternalStream())
@@ -100,6 +102,8 @@ func (r *registryImpl) UpdateStatus(keyName string, lastFrameTime time.Time, bit
 }
 
 func (r *registryImpl) GetStreamsStatus() ([]*ExternalStreamInfo, error) {
+	r.mux.Lock()
+	defer r.mux.Unlock()
 	streams := make([]*ExternalStreamInfo, 0, len(r.keys))
 	for _, key := range r.keys {
 		streams = append(streams, key.toExternalStreamInfo())
@@ -197,14 +201,12 @@ func (r *registryImpl) updateFromExternal(key *ExternalStream) error {
 }
 
 func (r *registryImpl) deleteStream(keyName string) {
-	if key, ok := r.keys[keyName]; ok {
-		key.Quit()
-	} else {
-		return
-	}
 	r.mux.Lock()
 	defer r.mux.Unlock()
-	delete(r.keys, keyName)
+	if key, ok := r.keys[keyName]; ok {
+		key.Quit()
+		delete(r.keys, keyName)
+	}
 }
 
 func (r *registryImpl) addStreamTarget(keyName string, target *api.PushTargetURL, targetName string) error {
