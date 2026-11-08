@@ -35,10 +35,9 @@ func (sess *MediaSession) init() {
 	sess.handle.OnPlay(func(_, streamName string, _, _ float64, _ bool) rtmp.StatusCode {
 		stream, err := sess.registry.GetInternalStream(streamName)
 		if err != nil {
-			log.Printf("Failed to get InternalStreamer for pull consumer %s: %v", streamName, err)
-			return rtmp.NETSTREAM_PLAY_NOTFOUND
-		}
-		if stream == nil {
+			if !errors.As(err, &registry.StreamNotFoundError{}) {
+				log.Printf("Failed to get InternalStreamer for pull consumer %s: %v", streamName, err)
+			}
 			return rtmp.NETSTREAM_PLAY_NOTFOUND
 		}
 		sess.pullConsumer = NewPullConsumer(sess, streamName)
@@ -48,11 +47,11 @@ func (sess *MediaSession) init() {
 
 	sess.handle.OnPublish(func(_, streamName string) rtmp.StatusCode {
 		stream, err := sess.registry.GetInternalStream(streamName)
-		if err != nil {
-			log.Printf("Failed to get %s stream info: %v", streamName, err)
-			return rtmp.NETCONNECT_CONNECT_REJECTED
-		} else if stream == nil {
+		if errors.As(err, &registry.StreamNotFoundError{}) {
 			log.Printf("No such %s stream info", streamName)
+			return rtmp.NETCONNECT_CONNECT_REJECTED
+		} else if err != nil {
+			log.Printf("Failed to get %s stream info: %v", streamName, err)
 			return rtmp.NETCONNECT_CONNECT_REJECTED
 		}
 

@@ -42,7 +42,7 @@ func (r *registryImpl) GetInternalStream(keyName string) (*Stream, error) {
 	if key, ok := r.keys[keyName]; ok {
 		return key, nil
 	}
-	return nil, nil
+	return nil, StreamNotFoundError{}
 }
 
 func (r *registryImpl) Update(key *ExternalStream) error {
