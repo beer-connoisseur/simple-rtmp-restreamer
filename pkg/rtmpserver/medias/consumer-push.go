@@ -47,8 +47,6 @@ type pushMetrics struct {
 	connected       prometheus.Gauge
 	connectFailures prometheus.Counter
 	errors          *prometheus.CounterVec
-	bytes           prometheus.Counter
-	queue           prometheus.Gauge
 	dropped         prometheus.Counter
 }
 
@@ -58,8 +56,6 @@ func newPushMetrics(stream, target string) pushMetrics {
 		connected:       metrics.PushConnected.With(labels),
 		connectFailures: metrics.PushConnectFailures.With(labels),
 		errors:          metrics.PushErrors.MustCurryWith(labels),
-		bytes:           metrics.PushBytes.With(labels),
-		queue:           metrics.PushQueueBatches.With(labels),
 		dropped:         metrics.PushDroppedBatches.With(labels),
 	}
 }
@@ -194,7 +190,6 @@ func (cn *PushConsumer) Play(frame *MediaFrameBatch) {
 		cn.framesBatches = cn.framesBatches[:45]
 	}
 	cn.framesBatches = append(cn.framesBatches, frame)
-	cn.metrics.queue.Set(float64(len(cn.framesBatches)))
 	cn.framesMtx.Unlock()
 	select {
 	case cn.frameCome <- struct{}{}:
@@ -229,7 +224,6 @@ func (cn *PushConsumer) setConn(c net.Conn) bool {
 func (cn *PushConsumer) Close() error {
 	cn.quited.Store(true)
 	cn.metrics.connected.Set(0)
-	cn.metrics.queue.Set(0)
 	var err error
 	cn.die.Do(func() {
 		close(cn.quit)
@@ -282,7 +276,6 @@ func (cn *PushConsumer) sendFrame(frame *MediaFrame) bool {
 		log.Printf("RTMPPushClient (%s) write socket error: %v", cn.url, err)
 		return false
 	}
-	cn.metrics.bytes.Add(float64(len(frame.Frame)))
 	return true
 }
 
@@ -294,7 +287,6 @@ func (cn *PushConsumer) sendToServer() {
 			cn.framesMtx.Lock()
 			batches := cn.framesBatches
 			cn.framesBatches = nil
-			cn.metrics.queue.Set(0)
 			cn.framesMtx.Unlock()
 
 			for _, batch := range batches {

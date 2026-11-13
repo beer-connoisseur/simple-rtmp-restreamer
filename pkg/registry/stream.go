@@ -51,6 +51,7 @@ func newStream(key *ExternalStream) (*Stream, error) {
 		framesBatches:   make(chan *medias.MediaFrameBatch, 3000),
 		quit:            make(chan struct{}),
 	}
+	metrics.StreamDroppedBatches.WithLabelValues(s.Name)
 	go s.dispatch()
 	return s, nil
 }

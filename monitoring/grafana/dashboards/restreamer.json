@@ -109,7 +109,7 @@
       },
       "gridPos": {
         "h": 4,
-        "w": 4,
+        "w": 5,
         "x": 0,
         "y": 1
       },
@@ -169,8 +169,8 @@
       },
       "gridPos": {
         "h": 4,
-        "w": 4,
-        "x": 4,
+        "w": 5,
+        "x": 5,
         "y": 1
       },
       "id": 3,
@@ -233,71 +233,11 @@
       },
       "gridPos": {
         "h": 4,
-        "w": 4,
-        "x": 8,
+        "w": 5,
+        "x": 10,
         "y": 1
       },
       "id": 4,
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      }
-    },
-    {
-      "type": "stat",
-      "title": "Players",
-      "description": "Players watching directly from the restreamer.",
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "sum(restreamer_pull_consumers) or vector(0)",
-          "legendFormat": "",
-          "refId": "A",
-          "range": true,
-          "instant": false
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "none",
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
-          },
-          "color": {
-            "mode": "thresholds"
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "colorMode": "background",
-        "graphMode": "area",
-        "textMode": "value",
-        "justifyMode": "center"
-      },
-      "gridPos": {
-        "h": 4,
-        "w": 4,
-        "x": 12,
-        "y": 1
-      },
-      "id": 5,
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -313,7 +253,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum(increase({__name__=~\"restreamer_(stream|push|pull)_dropped_batches_total\"}[5m])) or vector(0)",
+          "expr": "sum(increase({__name__=~\"restreamer_(stream|push)_dropped_batches_total\"}[5m])) or vector(0)",
           "legendFormat": "",
           "refId": "A",
           "range": true,
@@ -357,8 +297,8 @@
       },
       "gridPos": {
         "h": 4,
-        "w": 4,
-        "x": 16,
+        "w": 5,
+        "x": 15,
         "y": 1
       },
       "id": 6,
@@ -833,120 +773,6 @@
     },
     {
       "type": "timeseries",
-      "title": "Push bitrate",
-      "description": "Bitrate sent to each push target. Should match the ingest bitrate.",
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "sum by (stream, target) (rate(restreamer_push_bytes_total{stream=~\"$stream\"}[$__rate_interval])) * 8",
-          "legendFormat": "{{stream}} → {{target}}",
-          "refId": "A",
-          "range": true,
-          "instant": false
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "bps",
-          "min": 0,
-          "custom": {
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "lineWidth": 1,
-            "showPoints": "never",
-            "spanNulls": false
-          },
-          "color": {
-            "mode": "palette-classic"
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        }
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 33
-      },
-      "id": 16,
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      }
-    },
-    {
-      "type": "timeseries",
-      "title": "Push queue",
-      "description": "Batches waiting to be sent. Growth means the target (or the network to it) is slower than the stream; at 90 batches the queue overflows.",
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "restreamer_push_queue_batches{stream=~\"$stream\"}",
-          "legendFormat": "{{stream}} → {{target}}",
-          "refId": "A",
-          "range": true,
-          "instant": false
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "none",
-          "min": 0,
-          "custom": {
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "lineWidth": 1,
-            "showPoints": "never",
-            "spanNulls": false
-          },
-          "color": {
-            "mode": "palette-classic"
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        }
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 33
-      },
-      "id": 17,
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      }
-    },
-    {
-      "type": "timeseries",
       "title": "Push failures and errors",
       "description": "Failed push sessions (each one is followed by a reconnect) and RTMP error codes returned by targets.",
       "targets": [
@@ -1006,7 +832,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 41
+        "y": 33
       },
       "id": 18,
       "datasource": {
@@ -1038,17 +864,6 @@
           "expr": "sum by (stream, target) (increase(restreamer_push_dropped_batches_total{stream=~\"$stream\"}[$__rate_interval]))",
           "legendFormat": "{{stream}} → {{target}}",
           "refId": "B",
-          "range": true,
-          "instant": false
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "sum by (stream) (increase(restreamer_pull_dropped_batches_total{stream=~\"$stream\"}[$__rate_interval]))",
-          "legendFormat": "{{stream}}: players",
-          "refId": "C",
           "range": true,
           "instant": false
         }
@@ -1086,125 +901,9 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 41
+        "y": 33
       },
       "id": 19,
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      }
-    },
-    {
-      "type": "timeseries",
-      "title": "Players",
-      "description": "Players watching the stream directly from the restreamer.",
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "restreamer_pull_consumers{stream=~\"$stream\"}",
-          "legendFormat": "{{stream}}",
-          "refId": "A",
-          "range": true,
-          "instant": false
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "none",
-          "min": 0,
-          "custom": {
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "lineWidth": 1,
-            "showPoints": "never",
-            "spanNulls": false
-          },
-          "color": {
-            "mode": "palette-classic"
-          },
-          "decimals": 0
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        }
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 49
-      },
-      "id": 20,
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      }
-    },
-    {
-      "type": "timeseries",
-      "title": "RTMP connections",
-      "description": "Open incoming RTMP connections (publishers and players).",
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "restreamer_rtmp_sessions",
-          "legendFormat": "connections",
-          "refId": "A",
-          "range": true,
-          "instant": false
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "none",
-          "min": 0,
-          "custom": {
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "lineWidth": 1,
-            "showPoints": "never",
-            "spanNulls": false
-          },
-          "color": {
-            "mode": "palette-classic"
-          },
-          "decimals": 0
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        }
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 49
-      },
-      "id": 21,
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -1219,7 +918,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 57
+        "y": 41
       },
       "panels": []
     },
@@ -1271,9 +970,9 @@
       },
       "gridPos": {
         "h": 8,
-        "w": 8,
+        "w": 6,
         "x": 0,
-        "y": 58
+        "y": 42
       },
       "id": 23,
       "datasource": {
@@ -1339,9 +1038,9 @@
       },
       "gridPos": {
         "h": 8,
-        "w": 8,
-        "x": 8,
-        "y": 58
+        "w": 6,
+        "x": 6,
+        "y": 42
       },
       "id": 24,
       "datasource": {
@@ -1396,69 +1095,11 @@
       },
       "gridPos": {
         "h": 8,
-        "w": 8,
-        "x": 16,
-        "y": 58
+        "w": 6,
+        "x": 12,
+        "y": 42
       },
       "id": 25,
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      }
-    },
-    {
-      "type": "timeseries",
-      "title": "GC",
-      "description": "",
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "rate(go_gc_duration_seconds_count{job=\"restreamer\"}[$__rate_interval])",
-          "legendFormat": "GC cycles/s",
-          "refId": "A",
-          "range": true,
-          "instant": false
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "none",
-          "min": 0,
-          "custom": {
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "lineWidth": 1,
-            "showPoints": "never",
-            "spanNulls": false
-          },
-          "color": {
-            "mode": "palette-classic"
-          },
-          "decimals": 1
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        }
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 8,
-        "x": 0,
-        "y": 66
-      },
-      "id": 26,
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -1512,69 +1153,11 @@
       },
       "gridPos": {
         "h": 8,
-        "w": 8,
-        "x": 8,
-        "y": 66
+        "w": 6,
+        "x": 18,
+        "y": 42
       },
       "id": 27,
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      }
-    },
-    {
-      "type": "timeseries",
-      "title": "OS threads",
-      "description": "",
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "go_threads{job=\"restreamer\"}",
-          "legendFormat": "threads",
-          "refId": "A",
-          "range": true,
-          "instant": false
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "none",
-          "min": 0,
-          "custom": {
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "lineWidth": 1,
-            "showPoints": "never",
-            "spanNulls": false
-          },
-          "color": {
-            "mode": "palette-classic"
-          },
-          "decimals": 0
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        }
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 8,
-        "x": 16,
-        "y": 66
-      },
-      "id": 28,
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
